@@ -45,7 +45,7 @@
   </scm>
   <properties>
     <xwiki.extension.category>application</xwiki.extension.category>
-    <scimple.version>1.0.0-rc-1</scimple.version>
+    <scimple.version>1.0.0-rc-2</scimple.version>
   </properties>
   <modules>
     <module>scim-server</module>
