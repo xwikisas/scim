@@ -19,9 +19,9 @@
  */
 package com.xwiki.scim.rest;
 
-import java.util.Map;
+import org.json.JSONObject;
 
-record Group1Members(Map<String, Object> user1, Map<String, Object> user2, Map<String, Object> user3,
-                     Map<String, Object> user4, Map<String, Object> subgroup, Map<String, Object> group1)
+record Group1Members(JSONObject user1, JSONObject user2, JSONObject user3,
+                     JSONObject user4, JSONObject subgroup, JSONObject group1)
 {
 }

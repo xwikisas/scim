@@ -38,12 +38,12 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.directory.scim.protocol.Constants;
 import org.apache.http.entity.ContentType;
-import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
 import org.xwiki.test.ui.TestUtils;
 
-import net.sf.json.JSONObject;
+import org.json.JSONObject;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Inspired of org.xwiki.rest.test.framework.AbstractHttpIT.
@@ -128,8 +128,7 @@ abstract class AbstractScimHttp
 
     PostMethod executePost(String uri, XWikiUser user, Map<?, ?> content) throws Exception
     {
-        JSONObject json = new JSONObject();
-        json.putAll(content);
+        JSONObject json = new JSONObject(content);
         return executePost(uri, user, json.toString());
     }
 
@@ -140,8 +139,7 @@ abstract class AbstractScimHttp
 
     PatchMethod executePatch(String uri, XWikiUser user, Map<?, ?> content) throws Exception
     {
-        JSONObject json = new JSONObject();
-        json.putAll(content);
+        JSONObject json = new JSONObject(content);
         return executePatch(uri, user, json.toString());
     }
     PutMethod executePut(String uri, XWikiUser user, String json) throws Exception
@@ -160,8 +158,7 @@ abstract class AbstractScimHttp
 
     PutMethod executePut(String uri, XWikiUser user, Map<?, ?> content) throws Exception
     {
-        JSONObject json = new JSONObject();
-        json.putAll(content);
+        JSONObject json = new JSONObject(content);
         return executePut(uri, user, json.toString());
     }
 
@@ -181,42 +178,42 @@ abstract class AbstractScimHttp
 
     void assertOK(DeleteMethod method) throws Exception
     {
-        assertEquals(getHttpMethodInfo(method), HttpStatus.SC_NO_CONTENT, method.getStatusCode());
+        assertEquals(HttpStatus.SC_NO_CONTENT, method.getStatusCode(), getHttpMethodInfo(method));
     }
 
     void assertOK(PatchMethod method) throws Exception
     {
-        assertEquals(getHttpMethodInfo(method), HttpStatus.SC_OK, method.getStatusCode());
+        assertEquals(HttpStatus.SC_OK, method.getStatusCode(), getHttpMethodInfo(method));
     }
 
     void assertOK(PostMethod method) throws Exception
     {
-        assertEquals(getHttpMethodInfo(method), HttpStatus.SC_CREATED, method.getStatusCode());
+        assertEquals(HttpStatus.SC_CREATED, method.getStatusCode(), getHttpMethodInfo(method));
     }
 
     void assertOK(GetMethod method) throws Exception
     {
-        assertEquals(getHttpMethodInfo(method), HttpStatus.SC_OK, method.getStatusCode());
+        assertEquals(HttpStatus.SC_OK, method.getStatusCode(), getHttpMethodInfo(method));
     }
 
     void assertOK(PutMethod method) throws Exception
     {
-        assertEquals(getHttpMethodInfo(method), HttpStatus.SC_OK, method.getStatusCode());
+        assertEquals(HttpStatus.SC_OK, method.getStatusCode(), getHttpMethodInfo(method));
     }
 
     void assertForbidden(GetMethod method) throws Exception
     {
-        assertEquals(getHttpMethodInfo(method), HttpStatus.SC_FORBIDDEN, method.getStatusCode());
+        assertEquals(HttpStatus.SC_FORBIDDEN, method.getStatusCode(), getHttpMethodInfo(method));
     }
 
     void assertUnauthorized(HttpMethodBase method) throws Exception
     {
-        assertEquals(getHttpMethodInfo(method), HttpStatus.SC_UNAUTHORIZED, method.getStatusCode());
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, method.getStatusCode(), getHttpMethodInfo(method));
     }
 
-    static JSONObject getJSONResponse(HttpMethodBase method) throws IOException
+    static JSONObject getJSONResponse(HttpMethodBase method) throws IOException, JSONException
     {
-        return JSONObject.fromObject(new String(method.getResponseBody()));
+        return new JSONObject(new String(method.getResponseBody()));
     }
 
     static String getScimUsersEndpointURL(TestUtils setup)

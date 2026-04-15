@@ -42,6 +42,11 @@
       <version>${project.version}</version>
       <type>xar</type>
     </dependency>
+    <dependency>
+      <groupId>org.xwiki.contrib.oidc</groupId>
+      <artifactId>oidc-authenticator-user</artifactId>
+      <version>2.20.2</version>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -72,6 +77,43 @@
       <groupId>com.xwiki.directory.scimple</groupId>
       <artifactId>scim-compliance-tests</artifactId>
       <version>${scimple.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+    </dependency>
+    <!-- avoid java.lang.ClassNotFoundException: org.xwiki.model.internal.reference.DefaultEntityReferenceValueProvider -->
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-legacy-model-api</artifactId>
+      <version>${platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- avoid java.lang.ClassNotFoundException: org.jgroups.ReceiverAdapter -->
+    <dependency>
+      <groupId>org.jgroups</groupId>
+      <artifactId>jgroups</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- avoid ClassNotFoundException org/xwiki/security/authorization/DocumentAuthorizationManager -->
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-security-authorization-api</artifactId>
+      <version>${platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- avoid ClassNotFoundException org/xwiki/internal/document/DocumentRequiredRightsReader -->
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-oldcore</artifactId>
+      <version>${platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.skyscreamer</groupId>
+      <artifactId>jsonassert</artifactId>
+      <version>1.5.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
