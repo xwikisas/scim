@@ -25,7 +25,7 @@
   <parent>
     <groupId>com.xwiki.scim</groupId>
     <artifactId>scim-server</artifactId>
-    <version>1.0.0-rc-3-SNAPSHOT</version>
+    <version>1.0.0-rc-3</version>
   </parent>
   <artifactId>scim-server-rest-test-docker</artifactId>
   <name>SCIM - Server - REST Docker Tests</name>
@@ -160,4 +160,8 @@
       </build>
     </profile>
   </profiles>
+
+  <scm>
+    <tag>scim-1.0.0-rc-3</tag>
+  </scm>
 </project>
