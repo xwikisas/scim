@@ -23,7 +23,7 @@
   <parent>
     <groupId>com.xwiki.scim</groupId>
     <artifactId>scim-server</artifactId>
-    <version>1.0.0-rc-3</version>
+    <version>1.0.0-rc-4-SNAPSHOT</version>
   </parent>
   <artifactId>scim-server-ui</artifactId>
   <packaging>xar</packaging>
