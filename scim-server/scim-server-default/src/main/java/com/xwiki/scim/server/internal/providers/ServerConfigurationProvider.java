@@ -32,11 +32,7 @@ import org.apache.directory.scim.spec.schema.ServiceProviderConfiguration.Authen
 import org.slf4j.Logger;
 import org.xwiki.component.annotation.Component;
 
-import com.xpn.xwiki.XWiki;
-import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xwiki.scim.server.internal.Constants;
+import com.xwiki.scim.server.internal.ScimConfiguration;
 
 /**
  * SCIM ServerConfiguration provider.
@@ -47,12 +43,10 @@ import com.xwiki.scim.server.internal.Constants;
 @Singleton
 public class ServerConfigurationProvider implements Provider<ServerConfiguration>
 {
-    private static final String ADVERTISED_AUTH_SCHEMES = "advertisedAuthSchemes";
-
     private ServerConfiguration s;
 
     @Inject
-    private Provider<XWikiContext> contextProvider;
+    private ScimConfiguration scimConfiguration;
 
     @Inject
     private Logger logger;
@@ -64,17 +58,7 @@ public class ServerConfigurationProvider implements Provider<ServerConfiguration
             s = new ServerConfiguration();
         }
 
-        XWikiContext context = contextProvider.get();
-        XWiki wiki = context.getWiki();
-        XWikiDocument confDoc = null;
-        try {
-            confDoc = wiki.getDocument(Constants.SCIM_CONF_REF, context);
-        } catch (XWikiException e) {
-            logger.error(
-                "Failed to get the SCIM configuration document, no authentication schemes will be advertised", e);
-            return s;
-        }
-        Collection<String> advertisedAuthSchemes = confDoc.getListValue(ADVERTISED_AUTH_SCHEMES);
+        Collection<String> advertisedAuthSchemes = scimConfiguration.getAdvertisedAuthSchemes();
         if (advertisedAuthSchemes != null) {
             removeAllAuthSchemes();
             for (String scheme : advertisedAuthSchemes) {

@@ -29,6 +29,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import org.apache.commons.collections4.map.LinkedMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.directory.scim.spec.exception.ResourceException;
 import org.apache.directory.scim.spec.resources.GroupMembership;
 import org.apache.directory.scim.spec.resources.ScimGroup;
@@ -80,7 +81,7 @@ public class DefaultScimGroupRepository extends AbstractScimResourceRepository<S
     {
         Collection<DocumentReference> groupMembers = groupManager.getMembers(groupRef, false);
         Map<String, ScimRecord> groupMemberScimResources =
-            getManagedResourcesByRefs(groupMembers, scimClient);
+            getRecordsByRefs(groupMembers, scimClient);
         ArrayList<GroupMembership> members = new ArrayList<>(groupMembers.size());
         for (ScimRecord r : groupMemberScimResources.values()) {
             DocumentReference memberRef = r.resourceRef();
@@ -114,7 +115,7 @@ public class DefaultScimGroupRepository extends AbstractScimResourceRepository<S
     }
 
     @Override
-    protected String getName(ScimGroup scimResource)
+    protected String getDefaultReferenceName(ScimGroup scimResource)
     {
         return scimResource.getDisplayName();
     }
@@ -136,7 +137,7 @@ public class DefaultScimGroupRepository extends AbstractScimResourceRepository<S
             .filter(Objects::nonNull)
             .map(m -> m.getStringValue(MEMBER))
             .toList();
-        Map<String, ScimRecord> managedMembers = getManagedResourcesByFullNames(members, scimClient);
+        Map<String, ScimRecord> managedMembers = getRecordsByFullNames(members, scimClient);
         LinkedMap<String, BaseObject> existingMembersByFullName = new LinkedMap<>(existingMembers.size());
 
         for (BaseObject existingMember : existingMembers) {
@@ -156,7 +157,7 @@ public class DefaultScimGroupRepository extends AbstractScimResourceRepository<S
             scimMemberIds.add(getIdFromValueAndRef(membership.getValue(), membership.getRef()));
         }
 
-        List<String> fullNames = getManagedResourcesByIds(scimMemberIds, scimClient);
+        List<String> fullNames = getRecordsByIds(scimMemberIds, scimClient);
         for (String fullName : fullNames) {
             BaseObject memberObj = existingMembersByFullName.remove(fullName);
             if (memberObj == null) {
@@ -180,5 +181,20 @@ public class DefaultScimGroupRepository extends AbstractScimResourceRepository<S
 
         // This member management is a bit contrived, this is because the API to manipulate a document's objects is
         // very finicky, especially when both adding and removing objects that have the same number
+    }
+
+    @Override
+    protected Map<String, String> getFormatVariables(ScimGroup scimResource)
+    {
+        return Map.of(
+            "externalId", StringUtils.defaultString(scimResource.getExternalId()),
+            "displayName", StringUtils.defaultString(scimResource.getDisplayName())
+        );
+    }
+
+    @Override
+    protected String getReferenceNameFormat()
+    {
+        return conf.getGroupNameFormat();
     }
 }

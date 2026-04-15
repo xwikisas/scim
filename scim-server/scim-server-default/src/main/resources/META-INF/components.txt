@@ -21,3 +21,4 @@ com.xwiki.scim.server.internal.resources.SelfResourceImpl
 com.xwiki.scim.server.internal.resources.ServiceProviderConfigResourceImpl
 com.xwiki.scim.server.internal.resources.UsersResourceImpl
 com.xwiki.scim.server.internal.SCIMRestletJacksonContextResolver
+com.xwiki.scim.server.internal.ScimConfiguration

@@ -41,6 +41,12 @@ public final class Constants
     public static final LocalDocumentReference SCIM_CONF_REF = new LocalDocumentReference(SCIM_CODE_SPACE,
         "Configuration");
 
+    /**
+     * Where the configuration document class is found.
+     */
+    public static final LocalDocumentReference SCIM_CONF_CLASS_REF = new LocalDocumentReference(SCIM_CODE_SPACE,
+        "ConfigurationClass");
+
     private Constants()
     {
         // ignore

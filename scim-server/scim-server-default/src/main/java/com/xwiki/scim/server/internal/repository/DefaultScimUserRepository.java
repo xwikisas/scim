@@ -164,7 +164,7 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
             String avatarUrl = wiki.getURL(userDoc.getDocumentReference(), avatar, context);
             scimAvatar.setValue(avatarUrl);
             scimAvatar.setPrimary(true);
-            user.setProfileUrl(avatarUrl);
+            user.setPhotos(List.of(scimAvatar));
         }
     }
 
@@ -174,7 +174,7 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
         XWikiContext context = xcontextProvider.get();
         Collection<DocumentReference> groups = groupManager.getGroups(r.resourceRef(), context.getMainXWiki(), true);
         List<UserGroup> scimGroups = new ArrayList<>(groups.size());
-        Map<String, ScimRecord> scimManagedGroups = getManagedResourcesByRefs(groups, getScimClientId());
+        Map<String, ScimRecord> scimManagedGroups = getRecordsByRefs(groups, getScimClientId());
         for (ScimRecord group : scimManagedGroups.values()) {
             UserGroup userGroup = new UserGroup();
             String id = group.getId();
@@ -404,7 +404,48 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
 
         Set<String> groups = getGroupFullNames(scimClient, scimResource);
         addUserToGroups(scimClient, localSerializer.serialize(userRef), groups);
+        maybeAddOIDCObject(resourceDoc, scimResource);
         return resourceDoc;
+    }
+
+    private void maybeAddOIDCObject(XWikiDocument resourceDoc, ScimUser scimUser)
+    {
+        if (!conf.isOIDCEnabled()) {
+            return;
+        }
+
+        Map<String, String> variables = getFormatVariables(scimUser);
+
+        BaseObject oidcObj = resourceDoc.getXObject(OIDC_USER_CLASS_REF, true, xcontextProvider.get());
+
+        String issuer = conf.getOIDCIssuer();
+        String subject = userFormatterFactory.create(variables).format(conf.getOIDCSubject());
+        if (subject.isEmpty()) {
+            subject = usernameCleaner.clean(scimUser.getUserName());
+        }
+        oidcObj.setStringValue("issuer", issuer);
+        oidcObj.setStringValue("subject", subject);
+    }
+
+    @Override
+    protected Map<String, String> getFormatVariables(ScimUser scimResource)
+    {
+        return Map.of(
+            "externalId", StringUtils.defaultString(scimResource.getExternalId()),
+            "userName", StringUtils.defaultString(scimResource.getUserName()),
+            "userType", StringUtils.defaultString(scimResource.getUserType()),
+            "displayName", StringUtils.defaultString(scimResource.getDisplayName()),
+            "nickName", StringUtils.defaultString(scimResource.getNickName()),
+            TITLE, StringUtils.defaultString(scimResource.getTitle()),
+            EMAIL, StringUtils.defaultString(scimResource.getPrimaryEmailAddress().orElse(new Email()).getValue()),
+            PHONE, StringUtils.defaultString(scimResource.getPrimaryPhoneNumber().orElse(new PhoneNumber()).getValue())
+        );
+    }
+
+    @Override
+    protected String getReferenceNameFormat()
+    {
+        return conf.getUserNameFormat();
     }
 
     private static void updatePassword(ScimUser scimResource, BaseObject userObj)
@@ -587,7 +628,7 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
     }
 
     @Override
-    protected String getName(ScimUser scimResource)
+    protected String getDefaultReferenceName(ScimUser scimResource)
     {
         return scimResource.getUserName();
     }
@@ -646,7 +687,7 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
         Collection<XWikiDocument> groupDocsToSave = new ArrayList<>(groups.size());
         for (String groupId : groups) {
             try {
-                ScimRecord r = getResource(scimClient, groupId, true, false);
+                ScimRecord r = getRecord(scimClient, groupId, true, false);
                 if (r != null) {
                     XWikiDocument groupDoc = wiki.getDocument(r.resourceRef(), context);
                     int n = groupDoc.createXObject(groupClass, context);

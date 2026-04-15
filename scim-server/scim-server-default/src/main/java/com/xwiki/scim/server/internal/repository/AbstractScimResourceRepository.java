@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
@@ -36,7 +37,6 @@ import jakarta.inject.Provider;
 
 import javax.annotation.Nullable;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.directory.scim.core.repository.ETag;
 import org.apache.directory.scim.core.repository.InvalidRepositoryException;
@@ -62,6 +62,8 @@ import org.apache.directory.scim.spec.schema.Meta;
 import org.slf4j.Logger;
 import org.xwiki.component.phase.Initializable;
 import org.xwiki.component.phase.InitializationException;
+import org.xwiki.contrib.usercommon.formatter.UserFormatter;
+import org.xwiki.contrib.usercommon.formatter.UserFormatterFactory;
 import org.xwiki.model.EntityType;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.DocumentReferenceResolver;
@@ -79,12 +81,12 @@ import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.XWikiException;
 import com.xpn.xwiki.doc.XWikiDocument;
 import com.xpn.xwiki.objects.BaseObject;
+import com.xwiki.scim.server.internal.ScimConfiguration;
 import com.xwiki.scim.server.internal.SCIMRestletJacksonContextResolver;
 import com.xwiki.scim.server.internal.resources.GroupsResourceImpl;
 import com.xwiki.scim.server.internal.resources.UsersResourceImpl;
 
 import static com.xwiki.scim.server.internal.Constants.SCIM_CODE_SPACE;
-import static com.xwiki.scim.server.internal.Constants.SCIM_CONF_REF;
 import static com.xwiki.scim.server.internal.repository.ScimUserRepository.SELF_ID;
 
 /**
@@ -96,6 +98,9 @@ import static com.xwiki.scim.server.internal.repository.ScimUserRepository.SELF_
 @SuppressWarnings({"ClassFanOutComplexity"})
 abstract class AbstractScimResourceRepository<T extends ScimResource> implements Repository<T>, Initializable
 {
+    protected static final LocalDocumentReference OIDC_USER_CLASS_REF =
+        new LocalDocumentReference(List.of(XWiki.SYSTEM_SPACE, "OIDC"), "UserClass");
+
     private static final String ID = "id";
     private static final String USERS = "users";
     private static final String SLASH = "/";
@@ -131,6 +136,14 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
     private static final LocalDocumentReference SCIM_RESOURCE_CLASS =
         new LocalDocumentReference(SCIM_CODE_SPACE, "SCIMResourceClass");
 
+    protected UserFormatter usernameCleaner;
+
+    @Inject
+    protected ScimConfiguration conf;
+
+    @Inject
+    protected UserFormatterFactory userFormatterFactory;
+
     @Inject
     protected Provider<XWikiContext> xcontextProvider;
 
@@ -159,6 +172,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
     @Override
     public void initialize() throws InitializationException
     {
+        usernameCleaner = userFormatterFactory.create();
         try {
             repositoryRegistryProvider.get().registerRepository(getResourceClass(), this);
         } catch (InvalidRepositoryException e) {
@@ -206,7 +220,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
         meta.setCreated(LocalDateTime.ofInstant(resourceDoc.getCreationDate().toInstant(), ZoneId.systemDefault()));
         meta.setLastModified(LocalDateTime.ofInstant(resourceDoc.getDate().toInstant(), ZoneId.systemDefault()));
 
-        meta.setLocation(getLocation(isGroup(), r.getId()));
+        meta.setLocation(getLocation(r.getId()));
         meta.setVersion(resourceDoc.getVersion());
         meta.setResourceType(isGroup() ? ScimGroup.RESOURCE_NAME : ScimUser.RESOURCE_NAME);
         scimResource.setMeta(meta);
@@ -227,10 +241,9 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
      * @return the value of the location field as defined in
      *         <a href="https://datatracker.ietf.org/doc/html/rfc7643#section-3.1">rfc7643</a>,
      *         which is basically the same as the ref parameter but with an absolute URL
-     * @param isGroup whether the resource is a group
      * @param id the id for which to get the location field value
      */
-    private String getLocation(boolean isGroup, String id)
+    private String getLocation(String id)
     {
         String base = "";
         try {
@@ -239,7 +252,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             logger.error("Failed to get XWiki's URL. The requested SCIM resource will have a relative location", e);
         }
 
-        return base + getRef(isGroup, id);
+        return base + getRef(isGroup(), id);
     }
 
     /**
@@ -319,7 +332,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
 
         try {
             T scimResource = null;
-            ScimRecord r = getResource(scimClient, id, isGroup(), true);
+            ScimRecord r = getRecord(scimClient, id, isGroup(), true);
             if (r != null) {
                 scimResource = getScimResource(scimClient, r);
             }
@@ -341,29 +354,19 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
     {
         XWikiContext context = xcontextProvider.get();
         DocumentReference userReference = context.getUserReference();
-        try {
-            boolean found = false;
-            if (userReference != null) {
-                XWikiDocument confDoc = context.getWiki().getDocument(SCIM_CONF_REF, context);
-                // we use a UsersClass, which is a large string...
-                String[] users = ObjectUtils.defaultIfNull(
-                    confDoc.getStringValue(USERS), "").split(",");
-                for (String user : users) {
-                    DocumentReference userRef = resolver.resolve(user, EntityType.DOCUMENT);
-                    if (userReference.equals(userRef)) {
-                        found = true;
-                        break;
-                    }
+        boolean found = false;
+        if (userReference != null) {
+            for (String user : conf.getScimUsers()) {
+                DocumentReference userRef = resolver.resolve(user, EntityType.DOCUMENT);
+                if (userReference.equals(userRef)) {
+                    found = true;
+                    break;
                 }
             }
-            if (!found) {
-                throw new ResourceException(401, "You are not authorized to access this resource. "
-                    + "Your user needs to be listed in the SCIM Configuration object.");
-            }
-        } catch (XWikiException e) {
-            throw new ResourceException(500, "Could not determine if you are authorized to access this resource. ",
-                e);
-
+        }
+        if (!found) {
+            throw new ResourceException(401, "You are not authorized to access this resource. "
+                + "Your user needs to be listed in the SCIM Configuration object.");
         }
         return userReference.getName();
     }
@@ -382,7 +385,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
     {
         String scimClient = getScimClientId();
 
-        ScimRecord r = getResource(scimClient, id, isGroup(), true);
+        ScimRecord r = getRecord(scimClient, id, isGroup(), true);
         if (r == null) {
             throw new ResourceNotFoundException(id);
         }
@@ -449,20 +452,20 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
         Set<AttributeReference> includedAttributes, Set<AttributeReference> excludedAttributes) throws ResourceException
     {
         ScimRecord resource = r == null
-            ? getResource(getScimClientId(), id, isGroup(), false)
+            ? getRecord(getScimClientId(), id, isGroup(), false)
             : r;
-        String name = getName(scimResource);
-        DocumentReference dRef = resource.resourceRef();
-        if (!dRef.getName().equals(name)) {
-            throw new ResourceException(501, "Renaming resources is not supported");
-        }
         try {
+            String name = getDocumentReference(scimResource).getName();
+            DocumentReference dRef = resource.resourceRef();
+            if (!dRef.getName().equals(name)) {
+                throw new ResourceException(501, "Renaming resources is not supported");
+            }
             XWikiDocument resourceDoc = createOrUpdate(scimResource, resource);
             XWikiContext context = xcontextProvider.get();
             context.getWiki().saveDocument(resourceDoc, "Created or updated from SCIM", context);
             updateReferenceDoc(scimResource, resource);
-        } catch (XWikiException e) {
-            throw new ResourceException(500, "Failed to save resource document", e);
+        } catch (QueryException | XWikiException e) {
+            throw new ResourceException(500, "Failed to save the resource document", e);
         }
 
         return get(id, includedAttributes, excludedAttributes);
@@ -566,7 +569,11 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             .toList();
     }
 
-    protected abstract String getName(T scimResource);
+    /**
+     * @return the name to use to get the reference of a resource (which will be XWiki.name)
+     * @param scimResource the considered resource
+     */
+    protected abstract String getDefaultReferenceName(T scimResource);
 
     /**
      * Create a new document for this scim resource, making sure not to overwrite any existing XWiki user or group.
@@ -579,10 +586,10 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
         XWikiContext context = xcontextProvider.get();
         XWiki wiki = context.getWiki();
         String main = context.getMainXWiki();
-        DocumentReference resourceRef = new DocumentReference(main, XWIKI, getName(scimResource));
         try {
+            DocumentReference resourceRef = getDocumentReference(scimResource);
             XWikiDocument resourceDoc = wiki.getDocument(resourceRef, context);
-            if (!resourceDoc.isNew()) {
+            if (isNewResourceConflicting(resourceDoc)) {
                 throw new ConflictResourceException("This resource already exists");
             }
             List<String> resourceSpace = List.of("SCIM", "Resources", scimClient);
@@ -594,11 +601,102 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             DocumentReference referenceRef = new DocumentReference(main, resourceTypeSpace, id);
             return new ScimRecord(referenceRef, resourceRef, scimResource.getExternalId(),
                 getScimRepresentation(scimResource));
-        } catch (XWikiException | JsonProcessingException e) {
+        } catch (XWikiException | JsonProcessingException | QueryException e) {
             throw new ScimResourceInvalidException("Failed to create this resource's document", e);
         }
     }
 
+    abstract Map<String, String> getFormatVariables(T scimResource);
+
+    abstract String getReferenceNameFormat();
+
+    /**
+     * @return the document reference for this SCIM resource. The document name is determined using the group or user
+     * format defined in the configuration, or, by default, using the clean display name (for groups) or the clean
+     * username (for users). If the OIDC interop is enabled, we try to find a matching user first using the subject
+     * field of the OIDC user object.
+     * @param scimResource the resource to get the document reference for
+     * @throws QueryException if something wrong happens
+     */
+    private DocumentReference getDocumentReference(T scimResource) throws QueryException
+    {
+        String wiki = xcontextProvider.get().getMainXWiki();
+        Map<String, String> formatVariables = getFormatVariables(scimResource);
+        Pattern forbiddenPattern = conf.getForbiddenPattern();
+        String forbiddenReplacement = conf.getForbiddenReplacement();
+        UserFormatter formatter = userFormatterFactory.create(formatVariables, forbiddenPattern, forbiddenReplacement);
+        String name = null;
+        if (conf.isOIDCEnabled()) {
+            String subject = formatter.format(conf.getOIDCSubject());
+            List<String> res = queryManager.createQuery(
+                "select oidcUserObj.name from BaseObject oidcUserObj, StringProperty subject where "
+                    + "oidcUserObj.className = 'XWiki.OIDC.UserClass' and "
+                    + "subject.id.id = oidcUserObj.id and "
+                    + "subject.name = 'subject' and "
+                    + "subject.value = :subject",
+                Query.HQL).bindValue("subject", subject).setLimit(1).execute();
+            if (!res.isEmpty()) {
+                name = resolver.resolve(res.get(0)).getName();
+            }
+        }
+
+        if (name == null) {
+            name = formatter.format(getReferenceNameFormat());
+        }
+
+        if (name == null) {
+            name = clean(getDefaultReferenceName(scimResource));
+        }
+
+        return new DocumentReference(wiki, XWIKI, name);
+    }
+
+    private String clean(String name)
+    {
+        usernameCleaner.setForbiddenPattern(conf.getForbiddenPattern());
+        usernameCleaner.setForbiddenReplacement(conf.getForbiddenReplacement());
+        return usernameCleaner.clean(name);
+    }
+
+    /**
+     * @return whether the resource we are trying to create conflicts with an existing resource
+     * @param resourceDoc the document of the resource
+     * @throws QueryException if something wrong happens
+     */
+    private boolean isNewResourceConflicting(XWikiDocument resourceDoc) throws QueryException
+    {
+        // If the resource doesn't exist, there's no conflict
+        if (resourceDoc.isNew()) {
+            return false;
+        }
+
+        // if it exists and oidc is not enabled, it's always a conflict
+        if (!conf.isOIDCEnabled()) {
+            return true;
+        }
+
+        // it is not a conflict if the user has an oidc user class object: the user can have been created from OIDC.
+        // For groups, we cannot perform this check
+        if (!isGroup() && resourceDoc.getXObject(OIDC_USER_CLASS_REF) == null) {
+            return true;
+        }
+
+        // There's conflict if some SCIM client is already managing this resource (including the current one)
+        return !queryManager.createQuery(
+            "select d.fullName from Document d, d.object(SCIM.Code.SCIMResourceClass) o where o.reference = :ref",
+                Query.XWQL)
+            .setWiki(xcontextProvider.get().getMainXWiki())
+            .bindValue("ref", localSerializer.serialize(resourceDoc.getDocumentReference()))
+            .setLimit(1)
+            .execute()
+            .isEmpty();
+    }
+
+    /**
+     * Make sure the SCIM.Resources.{clientId} space is protected.
+     * @param resourceSpace List.of("SCIM", "Resources", {clientId})
+     * @throws XWikiException if something wrong happens
+     */
     private void ensureResourceSpaceProtection(List<String> resourceSpace) throws XWikiException
     {
         XWikiContext context = xcontextProvider.get();
@@ -617,20 +715,33 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
         }
     }
 
-    protected ScimRecord getResource(String scimClient, String id, boolean isGroup, boolean allowNull)
+    /**
+     * @return the record of a resource, if found, otherwise null (if allowNull is true)
+     * @param scimClient the SCIM client to use to find the resource
+     * @param id the SCIM (internal) id of the resource to find
+     * @param isGroup is the resource to find a group?
+     * @param allowNull is it ok not to find any resource? (for instance because we are trying to create the resource)
+     * @throws ResourceNotFoundException if allowNull is false and the resource was not found
+     * @throws ScimResourceInvalidException if isGroup doesn't match what we found (not supposed to happen)
+     */
+    protected ScimRecord getRecord(String scimClient, String id, boolean isGroup, boolean allowNull)
         throws ResourceNotFoundException
     {
+        // First, we try to find an existing resource with this id
         ScimRecord r;
         try {
-            r = getResourceRef(scimClient, id, isGroup);
+            r = getResourceRecord(scimClient, id, isGroup);
         } catch (QueryException e) {
             throw new ResourceNotFoundException(id, e);
         }
 
         if (r == null) {
             if (allowNull) {
+                // is it ok not to find this resource? (because we are creating it for instance)
                 return null;
             }
+
+            // we expected to find this resource
             throw new ResourceNotFoundException(id);
         }
 
@@ -640,13 +751,21 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
         return r;
     }
 
-    ScimRecord getResourceRef(String scimClient, String id, boolean group) throws QueryException
+    /**
+     * Return the record of an existing SCIM resource.
+     * @param scimClient the SCIM client to use to find the resource
+     * @param id the scim (internal) id of the resource to find
+     * @param isGroup is the resource to find a group?
+     * @return the record of the resource
+     * @throws QueryException if something wrong happen
+     */
+    ScimRecord getResourceRecord(String scimClient, String id, boolean isGroup) throws QueryException
     {
         if (SELF_ID.equals(id)) {
             return ScimRecord.getSelf(xcontextProvider.get());
         }
 
-        List<ScimRecord> queryResults = getQueryResults(scimClient, id, group);
+        List<ScimRecord> queryResults = getQueryResults(scimClient, id, isGroup);
         if (queryResults.isEmpty()) {
             return null;
         }
@@ -654,11 +773,24 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
         return queryResults.get(0);
     }
 
+    /**
+     * @param scimClient the SCIM client to use
+     * @param id the SCIM id of the resource
+     * @param isGroup whether the resource is a group
+     * @throws ResourceException if this SCIM client is not allowed to access this resource (because it is managed by
+     * some other SCIM client, or because the resource is not managed by SCIM)
+     */
     protected void checkScimClientAccess(String scimClient, String id, boolean isGroup) throws ResourceException
     {
-        getResource(scimClient, id, isGroup, false);
+        getRecord(scimClient, id, isGroup, false);
     }
 
+    /**
+     * @param referenceRef the reference to the SCIM resource under SCIM.Resources.{clientId}.{type}.{id}
+     * @param resourceRef the reference to the resource itself (under XWiki.{name})
+     * @param externalId the SCIM external ID of the resource
+     * @param scimRepresentation the serialized SCIM representation of the resource
+     */
     protected record ScimRecord(EntityReference referenceRef, DocumentReference resourceRef,
                                 String externalId, String scimRepresentation)
     {
@@ -677,11 +809,18 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             );
         }
 
+        /**
+         * @return the special SCIM record of self (of the SCIM client itself)
+         * @param context the XWiki context
+         */
         public static ScimRecord getSelf(XWikiContext context)
         {
             return new ScimRecord(null, context.getUserReference(), "", "");
         }
 
+        /**
+         * @return the SCIM id of the resource
+         */
         public String getId()
         {
             if (referenceRef() == null) {
@@ -690,6 +829,9 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             return referenceRef().getName();
         }
 
+        /**
+         * @return whether the resource is a group
+         */
         public boolean isGroup()
         {
             if (referenceRef() == null) {
@@ -699,7 +841,13 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
         }
     }
 
-    protected List<String> getManagedResourcesByIds(List<String> ids, String scimClient) throws QueryException
+    /**
+     * @return the records of the given ids using the given SCIM client
+     * @param ids the SCIM ids of the resources for which to get the records
+     * @param scimClient the SCIM client to use
+     * @throws QueryException if something wrong happens
+     */
+    protected List<String> getRecordsByIds(List<String> ids, String scimClient) throws QueryException
     {
         String q = (
             BASE_MANAGED_RESOURCE_HQL + "substring("
@@ -718,7 +866,13 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             .toList();
     }
 
-    protected Map<String, ScimRecord> getManagedResourcesByRefs(Collection<DocumentReference> refs, String scimClient)
+    /**
+     * @return the records for the SCIM resources managed by the given SCIM client matching the given references
+     * @param refs the document references of the resources to find
+     * @param scimClient the SCIM client to use
+     * @throws QueryException if something wrong happen
+     */
+    protected Map<String, ScimRecord> getRecordsByRefs(Collection<DocumentReference> refs, String scimClient)
         throws QueryException
     {
         String q = BASE_MANAGED_RESOURCE_HQL + "scimResource_reference.value in :fullNames";
@@ -734,9 +888,16 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             )).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    protected Map<String, ScimRecord> getManagedResourcesByFullNames(Collection<String> fullNames, String scimClient)
+    /**
+     * @return the records for the SCIM resources managed by the given SCIM client matching the given full names
+     * @param fullNames the XWiki full references of the resources to find
+     * @param scimClient the SCIM client to use
+     * @throws QueryException if something wrong happen
+     */
+    protected Map<String, ScimRecord> getRecordsByFullNames(Collection<String> fullNames, String scimClient)
         throws QueryException
     {
-        return getManagedResourcesByRefs(fullNames.stream().map(resolver::resolve).toList(), scimClient);
+        // note: we resolve and then serialize the given full names to ensure we have local full names
+        return getRecordsByRefs(fullNames.stream().map(resolver::resolve).toList(), scimClient);
     }
 }
