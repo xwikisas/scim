@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@UITest(vnc = false, offline = true)
+@UITest(vnc = false)
 //@UITest(vnc = false, servletEngine = org.xwiki.test.docker.junit5.servletengine.ServletEngine.EXTERNAL)
 class ScimRestIT extends AbstractScimHttp
 {
