@@ -50,6 +50,145 @@
       <defaultWeb/>
       <nameField/>
       <validationScript/>
+      <advertisedAuthSchemes>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>checkbox</displayType>
+        <freeText>forbidden</freeText>
+        <hint>SCIM's ServiceProviderConfig endpoint advertises possible authentication schemes to SCIM Clients. This parameter lets you list which ones should be advertised. Note: you must ensure that these authentication schemes work on your XWiki instance for the users allowed to use the SCIM REST endpoint!</hint>
+        <largeStorage>0</largeStorage>
+        <multiSelect>1</multiSelect>
+        <name>advertisedAuthSchemes</name>
+        <number>2</number>
+        <picker>0</picker>
+        <prettyName>Advertised Authentication Schemes</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>oauth=OAuth 1.0|oauth2=OAuth 2.0|oauthbearertoken=OAuth Bearer Token|httpbasic=HTTP Basic|httpdigest=HTTP Digest</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </advertisedAuthSchemes>
+      <forbiddenPattern>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint>The pattern to use to detect forbidden characters when cleaning user and group names.</hint>
+        <name>forbiddenPattern</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Forbidden Pattern (in user and group names)</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </forbiddenPattern>
+      <forbiddenReplacement>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint>The replacement to use for forbidden characters when cleaning user and group names.</hint>
+        <name>forbiddenReplacement</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Forbidden Replacement (in user and group names)</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </forbiddenReplacement>
+      <groupNameFormat>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint>The format to use for the reference name of imported groups (available variables: externalId, displayName). Default: ${displayName.clean}.</hint>
+        <name>groupNameFormat</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Group name format</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </groupNameFormat>
+      <oidcEnabled>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayFormType>checkbox</displayFormType>
+        <displayType/>
+        <hint>When enabled, an OIDC user object will be added to users created from SCIM, and reconciliations with users created from OIDC will be attempted. Requires the OIDC Authenticator to be installed. Note: if enabled, the OIDC issuer and OIDC subject must be configured as well.</hint>
+        <name>oidcEnabled</name>
+        <number>3</number>
+        <prettyName>Enable OIDC interoperability</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </oidcEnabled>
+      <oidcIssuer>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint>The OIDC issuer field of the OIDC user object will be filled with this value.</hint>
+        <name>oidcIssuer</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>OIDC Issuer</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </oidcIssuer>
+      <oidcSubject>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint>The OIDC subject field of the OIDC user object will be filled with this value (available variables: externalId, userName, userType, displayName, nickName, title, email, phone). Default: ${userName.clean}.</hint>
+        <name>oidcSubject</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>OIDC Subject</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </oidcSubject>
+      <userNameFormat>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint>The format to use for the reference name of imported users (available variables: externalId, userName, userType, displayName, nickName, title, email, phone). Default: ${userName.clean}.</hint>
+        <name>userNameFormat</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Username format</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </userNameFormat>
+      <usernameCleaningEnabled>
+        <customDisplay/>
+        <defaultValue>1</defaultValue>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint>When enabled, user and group names will be cleaned according to the forbidden pattern and replacement.</hint>
+        <name>usernameCleaningEnabled</name>
+        <number>3</number>
+        <prettyName>Enable user and group name cleaning</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </usernameCleaningEnabled>
       <users>
         <cache>0</cache>
         <customDisplay/>
@@ -57,7 +196,7 @@
         <disabled>0</disabled>
         <displayType>input</displayType>
         <freeText>forbidden</freeText>
-        <hint>Users allowed to use the REST endpoint</hint>
+        <hint>Users allowed to use the SCIM REST endpoint, that the SCIM clients will use to authenticate to XWiki. One per client. Note: it is important that each SCIM client should have its own XWiki user, don't reuse the same user in several clients!</hint>
         <largeStorage>0</largeStorage>
         <multiSelect>1</multiSelect>
         <name>users</name>
@@ -77,266 +216,34 @@
       </users>
     </class>
     <property>
+      <advertisedAuthSchemes/>
+    </property>
+    <property>
+      <forbiddenPattern/>
+    </property>
+    <property>
+      <forbiddenReplacement/>
+    </property>
+    <property>
+      <groupNameFormat/>
+    </property>
+    <property>
+      <oidcEnabled/>
+    </property>
+    <property>
+      <oidcIssuer/>
+    </property>
+    <property>
+      <oidcSubject/>
+    </property>
+    <property>
+      <userNameFormat/>
+    </property>
+    <property>
+      <usernameCleaningEnabled/>
+    </property>
+    <property>
       <users/>
-    </property>
-  </object>
-  <object>
-    <name>SCIM.Code.Configuration</name>
-    <number>0</number>
-    <className>XWiki.ConfigurableClass</className>
-    <guid>80c7e466-3dd6-463b-8672-0864c17b715a</guid>
-    <class>
-      <name>XWiki.ConfigurableClass</name>
-      <customClass/>
-      <customMapping/>
-      <defaultViewSheet/>
-      <defaultEditSheet/>
-      <defaultWeb/>
-      <nameField/>
-      <validationScript/>
-      <categoryIcon>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>categoryIcon</name>
-        <number>11</number>
-        <picker>0</picker>
-        <prettyName>categoryIcon</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </categoryIcon>
-      <codeToExecute>
-        <contenttype>VelocityWiki</contenttype>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <editor>---</editor>
-        <hint/>
-        <name>codeToExecute</name>
-        <number>7</number>
-        <picker>0</picker>
-        <prettyName>codeToExecute</prettyName>
-        <rows>5</rows>
-        <size>40</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
-      </codeToExecute>
-      <configurationClass>
-        <cache>0</cache>
-        <classname/>
-        <customDisplay/>
-        <defaultValue/>
-        <disabled>0</disabled>
-        <displayType>input</displayType>
-        <freeText/>
-        <hint/>
-        <idField/>
-        <largeStorage>0</largeStorage>
-        <multiSelect>0</multiSelect>
-        <name>configurationClass</name>
-        <number>3</number>
-        <picker>1</picker>
-        <prettyName>configurationClass</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators/>
-        <size>30</size>
-        <sort>none</sort>
-        <sql/>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <valueField/>
-        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
-      </configurationClass>
-      <displayBeforeCategory>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>displayBeforeCategory</name>
-        <number>10</number>
-        <picker>0</picker>
-        <prettyName>displayBeforeCategory</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </displayBeforeCategory>
-      <displayInCategory>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>displayInCategory</name>
-        <number>9</number>
-        <picker>0</picker>
-        <prettyName>displayInCategory</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </displayInCategory>
-      <displayInSection>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>displayInSection</name>
-        <number>1</number>
-        <picker>0</picker>
-        <prettyName>displayInSection</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </displayInSection>
-      <heading>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>heading</name>
-        <number>2</number>
-        <picker>0</picker>
-        <prettyName>heading</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </heading>
-      <iconAttachment>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>iconAttachment</name>
-        <number>8</number>
-        <picker>0</picker>
-        <prettyName>iconAttachment</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </iconAttachment>
-      <linkPrefix>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>linkPrefix</name>
-        <number>5</number>
-        <picker>0</picker>
-        <prettyName>linkPrefix</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </linkPrefix>
-      <propertiesToShow>
-        <cache>0</cache>
-        <customDisplay/>
-        <defaultValue/>
-        <disabled>0</disabled>
-        <displayType>input</displayType>
-        <freeText/>
-        <hint/>
-        <largeStorage>0</largeStorage>
-        <multiSelect>1</multiSelect>
-        <name>propertiesToShow</name>
-        <number>6</number>
-        <picker>0</picker>
-        <prettyName>propertiesToShow</prettyName>
-        <relationalStorage>1</relationalStorage>
-        <separator> </separator>
-        <separators> ,|</separators>
-        <size>20</size>
-        <sort>none</sort>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <values/>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </propertiesToShow>
-      <scope>
-        <cache>0</cache>
-        <customDisplay/>
-        <defaultValue/>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <freeText/>
-        <hint/>
-        <largeStorage>0</largeStorage>
-        <multiSelect>0</multiSelect>
-        <name>scope</name>
-        <number>12</number>
-        <picker>1</picker>
-        <prettyName>scope</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <sort/>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <values>WIKI|SPACE|ALL_SPACES|WIKI+ALL_SPACES</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </scope>
-      <sectionOrder>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>sectionOrder</name>
-        <number>12</number>
-        <numberType>integer</numberType>
-        <prettyName>sectionOrder</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.NumberClass</classType>
-      </sectionOrder>
-    </class>
-    <property>
-      <categoryIcon/>
-    </property>
-    <property>
-      <codeToExecute/>
-    </property>
-    <property>
-      <configurationClass>SCIM.Code.ConfigurationClass</configurationClass>
-    </property>
-    <property>
-      <displayBeforeCategory/>
-    </property>
-    <property>
-      <displayInCategory>usersgroups</displayInCategory>
-    </property>
-    <property>
-      <displayInSection>SCIM</displayInSection>
-    </property>
-    <property>
-      <heading/>
-    </property>
-    <property>
-      <iconAttachment/>
-    </property>
-    <property>
-      <linkPrefix/>
-    </property>
-    <property>
-      <propertiesToShow/>
-    </property>
-    <property>
-      <scope>WIKI</scope>
-    </property>
-    <property>
-      <sectionOrder/>
     </property>
   </object>
 </xwikidoc>
