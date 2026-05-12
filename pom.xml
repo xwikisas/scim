@@ -29,7 +29,7 @@
   </parent>
   <groupId>com.xwiki.scim</groupId>
   <artifactId>scim</artifactId>
-  <version>1.0.0-rc-4-SNAPSHOT</version>
+  <version>1.0.0-rc-4</version>
   <packaging>pom</packaging>
   <name>SCIM - Parent POM</name>
   <description>SCIM XWiki SAS related extensions</description>
@@ -41,7 +41,7 @@
     <connection>scm:git:git://github.com/xwikisas/scim.git</connection>
     <developerConnection>scm:git:git@github.com:xwikisas/scim.git</developerConnection>
     <url>https://github.com/xwikisas/scim</url>
-    <tag>scim-1.0.0-rc-3</tag>
+    <tag>scim-1.0.0-rc-4</tag>
   </scm>
   <properties>
     <xwiki.extension.category>application</xwiki.extension.category>
