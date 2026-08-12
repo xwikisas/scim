@@ -58,8 +58,10 @@ public class ServiceProviderConfigResourceImpl implements Initializable, Service
     @Override
     public void initialize()
     {
+        ServerConfiguration serverConfiguration = serverConfigurationProvider.get();
+        serverConfiguration.setSupportsBulk(false);
         impl = new org.apache.directory.scim.server.rest.ServiceProviderConfigResourceImpl(
-            serverConfigurationProvider.get(),
+            serverConfiguration,
             new EtagGenerator()
         );
     }
