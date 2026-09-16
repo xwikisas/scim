@@ -37,6 +37,9 @@ class AllIT
     class NestedScimRestIT extends ScimRestIT { }
 
     @Nested
+    class NestedMakeMSValidatorHappyIT extends MakeMSValidatorHappyIT { }
+
+    @Nested
     @DisplayName("Tests from Apache Directory SCIMple")
     class NestedSCIMpleIT extends AbstractSCIMpleIT
     {
