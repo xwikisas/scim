@@ -129,8 +129,15 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
 
         String defaultLanguage = userDoc.getStringValue(DEFAULT_LANGAGE);
         if (StringUtils.isNotEmpty(defaultLanguage)) {
-            user.setPreferredLanguage(defaultLanguage);
-            user.setLocale(defaultLanguage);
+            String preferredLanguage = user.getPreferredLanguage();
+            String normalizedPreferredLanguage = StringUtils.defaultString(defaultLanguage).toLowerCase(Locale.ROOT);
+            if (!normalizedPreferredLanguage.equals(getSingleLanguageRange(preferredLanguage))) {
+                // We don't update the preferred language stored in the SCIM object if the translation we do from SCIM
+                // to XWiki gives what's stored from SCIM. This allows returning something less surprising to the SCIM
+                // client (the created user that's returned has a preferredLanguage field that matches what was sent. It
+                // should also make filtering more consistent should a SCIM client filter users according to this field)
+                user.setPreferredLanguage(defaultLanguage);
+            }
         }
 
         String title = StringUtils.defaultString(userDoc.getStringValue(TITLE));
@@ -618,6 +625,7 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
             return "";
         }
 
+        // Note that getRange returns lowercased strings
         return ranges.get(0).getRange();
     }
 
