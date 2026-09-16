@@ -37,6 +37,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.directory.scim.spec.exception.ResourceException;
 import org.apache.directory.scim.spec.exception.ScimResourceInvalidException;
+import org.apache.directory.scim.spec.extension.EnterpriseExtension;
 import org.apache.directory.scim.spec.phonenumber.PhoneNumberParseException;
 import org.apache.directory.scim.spec.resources.Address;
 import org.apache.directory.scim.spec.resources.Email;
@@ -44,6 +45,7 @@ import org.apache.directory.scim.spec.resources.Im;
 import org.apache.directory.scim.spec.resources.Name;
 import org.apache.directory.scim.spec.resources.PhoneNumber;
 import org.apache.directory.scim.spec.resources.Photo;
+import org.apache.directory.scim.spec.resources.ScimExtension;
 import org.apache.directory.scim.spec.resources.ScimUser;
 import org.apache.directory.scim.spec.resources.UserGroup;
 import org.slf4j.Logger;
@@ -735,5 +737,11 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
             }
         }
         return groups;
+    }
+
+    @Override
+    public List<Class<? extends ScimExtension>> getExtensionList()
+    {
+        return List.of(EnterpriseExtension.class);
     }
 }
