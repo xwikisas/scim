@@ -222,11 +222,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
         scimResource.setMeta(meta);
         scimResource.setId(r.getId());
 
-        if (StringUtils.isEmpty(r.externalId())) {
-            if (!SELF_ID.equals(r.getId())) {
-                scimResource.setExternalId(r.externalId());
-            }
-        } else {
+        if (!StringUtils.isEmpty(r.externalId())) {
             scimResource.setExternalId(r.externalId());
         }
 
@@ -784,7 +780,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             return new ScimRecord(
                 resolver.resolve(referenceRef, EntityType.DOCUMENT),
                 resolver.resolve(resourceRef, EntityType.DOCUMENT),
-                externalId,
+                StringUtils.isEmpty(externalId) ? null : externalId,
                 scimRepresentation
             );
         }
