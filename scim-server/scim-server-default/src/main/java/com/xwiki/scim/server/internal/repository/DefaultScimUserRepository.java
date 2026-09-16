@@ -108,7 +108,11 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
         XWikiDocument userDoc = context.getWiki().getDocument(r.resourceRef(), context);
         ScimUser user = getScimUserFromDocument(r);
         user.setActive(userDoc.getIntValue(ACTIVE) == 1);
-        user.setUserName(r.resourceRef().getName());
+
+        if (StringUtils.isEmpty(user.getUserName())) {
+            // If present, we don't set the username of the resource, we keep the one originally sent by the client
+            user.setUserName(r.resourceRef().getName());
+        }
 
         fetchAddress(userDoc, user);
         fetchEmail(userDoc, user);

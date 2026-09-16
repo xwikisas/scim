@@ -432,14 +432,20 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             ? getRecord(getScimClientId(), id, isGroup(), false)
             : r;
         try {
-            String name = getDocumentReference(scimResource).getName();
-            DocumentReference dRef = resource.resourceRef();
-            if (!dRef.getName().equals(name)) {
-                throw new ResourceException(501, "Renaming resources is not supported");
+            DocumentReference newDocRef = getDocumentReference(scimResource);
+            DocumentReference oldDocRef = resource.resourceRef();
+            XWikiContext context = xcontextProvider.get();
+            XWiki wiki = context.getWiki();
+            if (!newDocRef.equals(oldDocRef) && wiki.exists(newDocRef, context)) {
+                throw new ResourceException(400, "The target user already exists");
             }
             XWikiDocument resourceDoc = createOrUpdate(scimResource, resource);
-            XWikiContext context = xcontextProvider.get();
-            context.getWiki().saveDocument(resourceDoc, "Created or updated from SCIM", context);
+            wiki.saveDocument(resourceDoc, "Created or updated from SCIM", context);
+            if (!newDocRef.equals(oldDocRef) && wiki.exists(oldDocRef, context)) {
+                wiki.renameDocument(oldDocRef, newDocRef, false, List.of(), List.of(), context);
+                resource = new ScimRecord(
+                        resource.referenceRef, newDocRef, resource.externalId, resource.scimRepresentation);
+            }
             updateReferenceDoc(scimResource, resource);
         } catch (QueryException | XWikiException e) {
             throw new ResourceException(500, "Failed to save the resource document", e);

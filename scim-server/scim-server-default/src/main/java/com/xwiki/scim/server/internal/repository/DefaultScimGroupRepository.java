@@ -71,7 +71,10 @@ public class DefaultScimGroupRepository extends AbstractScimResourceRepository<S
         throws GroupException, QueryException
     {
         ScimGroup group = new ScimGroup();
-        group.setDisplayName(getGroupDisplayName(r.resourceRef()));
+        if (StringUtils.isEmpty(group.getDisplayName())) {
+            // If present, we don't set the display name of the resource, we keep the one originally sent by the client
+            group.setDisplayName(getGroupDisplayName(r.resourceRef()));
+        }
         setMembers(scimClient, r.resourceRef(), group);
         return group;
     }

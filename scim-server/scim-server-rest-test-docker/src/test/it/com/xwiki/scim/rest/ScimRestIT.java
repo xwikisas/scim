@@ -472,11 +472,16 @@ class ScimRestIT extends AbstractScimHttp
         assertPutGroupOK(setup, group1Id, scimAdmin(), updatedGroup, updatedGroup.getString("displayName"), "2");
         assertGetGroupOK(setup, group1Id, scimAdmin(), updatedGroup, updatedGroup.getString("displayName"), "2");
 
+        // Renaming a resource works
         updatedUser.put("userName", "renamedUser");
+        assertPutUserOK(setup, user1Id, scimAdmin(), updatedUser, updatedUser.getString("userName"), "3");
+        assertFalse(setup.pageExists("XWiki", user1.getString("userName")));
+        assertTrue(setup.pageExists("XWiki", updatedUser.getString("userName")));
 
-        // Renaming a resource fails
+        // Unless the target already exists
+        updatedUser.put("userName", scimAdmin().userName());
         PutMethod putMethod = executePut(getScimUsersEndpointURL(setup) + "/" + user1Id, scimAdmin(), updatedUser);
-        assertEquals(HttpStatus.SC_NOT_IMPLEMENTED, putMethod.getStatusCode(), getHttpMethodInfo(putMethod));
+        assertEquals(HttpStatus.SC_BAD_REQUEST, putMethod.getStatusCode(), getHttpMethodInfo(putMethod));
 
         assertDeleteGroupOK(setup, group1Id, scimAdmin());
         assertDeleteUserOK(setup, user1Id, scimAdmin());
@@ -588,7 +593,7 @@ class ScimRestIT extends AbstractScimHttp
         String userReferenceName = "totallydifferentname";
         String cleaned = "notcleanusername";
         setup.updateObject("XWiki", userReferenceName, "XWiki.OIDC.UserClass", 0, "subject", cleaned, "issuer", OIDC_ISSUER);
-        String id = assertCreateUserOK(setup, user1, scimAdmin(), cleaned);
+        String id = assertCreateUserOK(setup, user1, scimAdmin(), user1.getString("userName"));
 
         org.xwiki.rest.model.jaxb.Object object = setup.rest().get(
             new ObjectReference("SCIM.Code.SCIMResourceClass[0]",
