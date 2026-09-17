@@ -79,7 +79,7 @@ import static com.xwiki.scim.rest.Utils.getScimGroupsEndpointURL;
 //@UITest(vnc = false, debug = true, servletEngine = org.xwiki.test.docker.junit5.servletengine.ServletEngine.EXTERNAL)
 class ScimRestIT extends AbstractScimHttp
 {
-    private static final int EXPECTED_SCHEMA_COUNT = 3;
+    private static final int EXPECTED_SCHEMA_COUNT = 6;
     private static final JSONObject NEW_USER = getUser(NEWUSER, "New User", "newUserExternalId");
     private static final DocumentReference NEWUSER_REF = new DocumentReference(XWIKI_WIKI, XWIKI_SPACE, NEWUSER);
     private static final String NON_EXISTING_USER_ID = "thisuserdoesnotexxist";
@@ -412,11 +412,14 @@ class ScimRestIT extends AbstractScimHttp
         assertNotNull(actualResources);
         assertEquals(EXPECTED_SCHEMA_COUNT, actualResources.length());
         JSONAssert.assertEquals(expected, actual, true);
+        assertEquals("urn:ietf:params:scim:schemas:core:2.0:ResourceType", actualResources.getJSONObject(1).getString("id"));
+        assertEquals("urn:ietf:params:scim:schemas:core:2.0:Schema", actualResources.getJSONObject(2).getString("id"));
+        assertEquals("urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig", actualResources.getJSONObject(3).getString("id"));
         assertSchemas(
                 setup,
                 actualResources.getJSONObject(0),
-                actualResources.getJSONObject(1),
-                actualResources.getJSONObject(2)
+                actualResources.getJSONObject(4),
+                actualResources.getJSONObject(5)
         );
 
         getMethod = executeGet(getScimEndpointURL(setup) + "Schemas/" + ScimGroup.SCHEMA_URI, scimAdmin());
@@ -428,8 +431,8 @@ class ScimRestIT extends AbstractScimHttp
         assertSchemas(setup, actualGroupSchema, actualUserSchema, actualEnterpriseUserSchema);
     }
 
-    private void assertSchemas(TestUtils setup, JSONObject groupSchema, JSONObject userSchema, JSONObject enterpriseUserSchema) throws
-            JSONException
+    private void assertSchemas(TestUtils setup, JSONObject groupSchema, JSONObject userSchema, JSONObject enterpriseUserSchema)
+        throws JSONException
     {
         assertResourceSchemaOK(setup, "Group", groupSchema);
         assertResourceSchemaOK(setup, "User", userSchema);

@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -35,14 +34,12 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 
-import javax.annotation.Nullable;
-
 import org.apache.commons.lang3.StringUtils;
-import org.apache.directory.scim.core.repository.ETag;
 import org.apache.directory.scim.core.repository.InvalidRepositoryException;
 import org.apache.directory.scim.core.repository.PatchHandler;
 import org.apache.directory.scim.core.repository.Repository;
 import org.apache.directory.scim.core.repository.RepositoryRegistry;
+import org.apache.directory.scim.core.repository.ScimRequestContext;
 import org.apache.directory.scim.core.schema.SchemaRegistry;
 import org.apache.directory.scim.spec.exception.ConflictResourceException;
 import org.apache.directory.scim.spec.exception.ResourceException;
@@ -51,14 +48,13 @@ import org.apache.directory.scim.spec.exception.ScimResourceInvalidException;
 import org.apache.directory.scim.spec.filter.Filter;
 import org.apache.directory.scim.spec.filter.FilterExpressions;
 import org.apache.directory.scim.spec.filter.FilterResponse;
-import org.apache.directory.scim.spec.filter.PageRequest;
-import org.apache.directory.scim.spec.filter.SortRequest;
-import org.apache.directory.scim.spec.filter.attribute.AttributeReference;
+import org.apache.directory.scim.spec.filter.SortExpressions;
 import org.apache.directory.scim.spec.patch.PatchOperation;
 import org.apache.directory.scim.spec.resources.ScimGroup;
 import org.apache.directory.scim.spec.resources.ScimResource;
 import org.apache.directory.scim.spec.resources.ScimUser;
 import org.apache.directory.scim.spec.schema.Meta;
+import org.apache.directory.scim.spec.schema.Schema;
 import org.slf4j.Logger;
 import org.xwiki.component.phase.Initializable;
 import org.xwiki.component.phase.InitializationException;
@@ -325,7 +321,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
     }
 
     @Override
-    public T get(String id, Set<AttributeReference> includedAttributes, Set<AttributeReference> excludedAttributes)
+    public T get(String id, ScimRequestContext requestContext)
         throws ResourceException
     {
         String scimClient = getScimClientId();
@@ -402,8 +398,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
     }
 
     @Override
-    public FilterResponse<T> find(Filter filter, PageRequest pageRequest, SortRequest sortRequest,
-        Set<AttributeReference> includedAttributes, Set<AttributeReference> excludedAttributes) throws ResourceException
+    public FilterResponse<T> find(Filter filter, ScimRequestContext requestContext) throws ResourceException
     {
         List<T> resources;
         try {
@@ -412,33 +407,19 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             throw new ScimResourceInvalidException("Could not find users or groups", e);
         }
 
+        Schema schema = schemaRegistryProvider.get().getSchema(isGroup() ? ScimGroup.SCHEMA_URI : ScimUser.SCHEMA_URI);
         // Taken from the InMemoryUserService example.
-        long count = pageRequest.getCount() != null ? pageRequest.getCount() : resources.size();
-        // SCIM is 1-based indexed
-        long startIndex = pageRequest.getStartIndex() != null
-            ? pageRequest.getStartIndex() - 1
-            : 0;
-
-        List<T> result = resources.stream()
-            .skip(startIndex)
-            .limit(count)
-            .filter(FilterExpressions.inMemory(filter,
-                schemaRegistryProvider.get().getSchema(
-                    isGroup()
-                        ? ScimGroup.SCHEMA_URI
-                        : ScimUser.SCHEMA_URI
-                )))
-            .toList();
-
-        return new FilterResponse<>(result, pageRequest, result.size());
+        return resources.stream()
+            .filter(FilterExpressions.inMemory(filter, schema))
+            .sorted(SortExpressions.comparator(requestContext.getSortRequest(), schema))
+            .collect(FilterResponse.paginate(requestContext.getPageRequestOrDefault()));
     }
 
     @Override
-    public T create(T scimResource, Set<AttributeReference> includedAttributes,
-        Set<AttributeReference> excludedAttributes) throws ResourceException
+    public T create(T scimResource, ScimRequestContext requestContext) throws ResourceException
     {
         ScimRecord r = newResource(scimResource);
-        return createOrUpdateAndSave(scimResource, r.getId(), r, includedAttributes, excludedAttributes);
+        return createOrUpdateAndSave(scimResource, r.getId(), r, requestContext);
     }
 
     /**
@@ -448,8 +429,8 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
      */
     abstract XWikiDocument createOrUpdate(T scimResource, ScimRecord r) throws ResourceException;
 
-    private T createOrUpdateAndSave(T scimResource, String id, ScimRecord r,
-        Set<AttributeReference> includedAttributes, Set<AttributeReference> excludedAttributes) throws ResourceException
+    private T createOrUpdateAndSave(T scimResource, String id, ScimRecord r, ScimRequestContext requestContext)
+        throws ResourceException
     {
         ScimRecord resource = r == null
             ? getRecord(getScimClientId(), id, isGroup(), false)
@@ -468,7 +449,7 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
             throw new ResourceException(500, "Failed to save the resource document", e);
         }
 
-        return get(id, includedAttributes, excludedAttributes);
+        return get(id, requestContext);
     }
 
     private void updateReferenceDoc(T scimResource, ScimRecord r) throws XWikiException
@@ -498,22 +479,21 @@ abstract class AbstractScimResourceRepository<T extends ScimResource> implements
     }
 
     @Override
-    public T patch(String id, @Nullable Set<ETag> etags, List<PatchOperation> patchOperations,
-        Set<AttributeReference> includedAttributes, Set<AttributeReference> excludedAttributes) throws ResourceException
+    public T patch(String id, List<PatchOperation> patchOperations, ScimRequestContext requestContext)
+        throws ResourceException
     {
         // inspired of the InMemoryGroupService.java example implementation
         PatchHandler patchHandler = patchHandlerProvider.get();
-        T original = get(id, includedAttributes, excludedAttributes);
+        T original = get(id, requestContext);
         // PatchHandler#apply already takes care of null checks
         T updated = patchHandler.apply(original, patchOperations);
-        return createOrUpdateAndSave(updated, id, null, includedAttributes, excludedAttributes);
+        return createOrUpdateAndSave(updated, id, null, requestContext);
     }
 
     @Override
-    public T update(String id, @Nullable Set<ETag> etags, T resource, Set<AttributeReference> includedAttributes,
-        Set<AttributeReference> excludedAttributes) throws ResourceException
+    public T update(String id, T resource, ScimRequestContext requestContext) throws ResourceException
     {
-        return createOrUpdateAndSave(resource, id, null, includedAttributes, excludedAttributes);
+        return createOrUpdateAndSave(resource, id, null, requestContext);
     }
 
     /**

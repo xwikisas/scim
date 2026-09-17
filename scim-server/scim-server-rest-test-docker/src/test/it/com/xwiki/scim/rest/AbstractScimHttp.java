@@ -192,7 +192,7 @@ abstract class AbstractScimHttp extends BaseSCIMRestIT
     {
         JSONArray attributes = (JSONArray) actual.remove("attributes");
         assertAttributesOK(attributes);
-
+        expected.put("schemas", new JSONArray(List.of("urn:ietf:params:scim:schemas:core:2.0:Schema")));
         JSONAssert.assertEquals(expected, actual, true);
     }
 

@@ -39,6 +39,7 @@ import com.xwiki.scim.server.internal.repository.ScimUserRepository;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
+import org.apache.directory.scim.server.configuration.ServerConfiguration;
 
 /**
  * REST API of the /Bulk endpoint.
@@ -59,6 +60,9 @@ public class BulkResourceImpl implements Initializable, BulkResource, XWikiRestC
     @Inject
     private Provider<RepositoryRegistry> repositoryRegistryProvider;
 
+    @Inject
+    private Provider<ServerConfiguration> serverConfigurationProvider;
+
     // Make sure the user repository is initialized and registered before hitting the REST endpoint
     @Inject
     private ScimUserRepository userRepository;
@@ -74,7 +78,8 @@ public class BulkResourceImpl implements Initializable, BulkResource, XWikiRestC
     {
         impl = new org.apache.directory.scim.server.rest.BulkResourceImpl(
             schemaRegistryProvider.get(),
-            repositoryRegistryProvider.get()
+            repositoryRegistryProvider.get(),
+            serverConfigurationProvider.get()
         );
     }
 
