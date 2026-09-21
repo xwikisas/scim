@@ -103,6 +103,7 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
         return ScimUser.class;
     }
 
+    @Override
     protected ScimUser getScimResourceWithoutMeta(String scimClient, ScimRecord r)
         throws GroupException, XWikiException, QueryException, ResourceException
     {
