@@ -712,7 +712,7 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
             try {
                 ScimRecord r = getRecord(scimClient, groupId, true, false);
                 if (r != null) {
-                    XWikiDocument groupDoc = wiki.getDocument(r.resourceRef(), context);
+                    XWikiDocument groupDoc = wiki.getDocument(r.resourceRef(), context).clone();
                     int n = groupDoc.createXObject(groupClass, context);
                     BaseObject groupObj = groupDoc.getXObject(groupClass, n);
                     groupObj.set("member", userFullName, context);
