@@ -532,7 +532,7 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
         }
     }
 
-    private static void updateLanguage(ScimUser scimResource, BaseObject userObj)
+    private void updateLanguage(ScimUser scimResource, BaseObject userObj)
     {
         boolean updated = false;
         String preferredLanguage = scimResource.getPreferredLanguage();
@@ -621,9 +621,17 @@ public class DefaultScimUserRepository extends AbstractScimResourceRepository<Sc
         userObj.setLargeStringValue(ADDRESS, formatted.trim());
     }
 
-    private static String getSingleLanguageRange(String locale)
+    private String getSingleLanguageRange(String locale)
     {
-        List<Locale.LanguageRange> ranges = Locale.LanguageRange.parse(locale);
+        List<Locale.LanguageRange> ranges;
+
+        try {
+            ranges = Locale.LanguageRange.parse(locale);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Could not parse language range from SCIM client: [{}]", locale);
+            return "";
+        }
+
         if (ranges.isEmpty()) {
             return "";
         }
